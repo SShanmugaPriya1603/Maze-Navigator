@@ -6,12 +6,12 @@ A real-time gesture-controlled maze game that uses an ESP32 with an MPU6050 moti
 
 ## Features
 
-- 📡 Real-time gesture recognition using ESP32 + MPU6050
-- 🧠 Deep Learning gesture classification using TensorFlow/Keras (1D CNN)
-- 🌐 WebSocket communication between Python backend and browser
-- 🎮 Browser-based interactive maze game
-- 💥 Breakable obstacles using gesture commands
-- ⌨️ Keyboard demo mode for testing without hardware
+-  Real-time gesture recognition using ESP32 + MPU6050
+-  Deep Learning gesture classification using TensorFlow/Keras (1D CNN)
+-  WebSocket communication between Python backend and browser
+-  Browser-based interactive maze game
+-  Breakable obstacles using gesture commands
+-  Keyboard demo mode for testing without hardware
 
 ---
 
