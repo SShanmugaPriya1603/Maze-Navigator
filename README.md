@@ -98,6 +98,23 @@ maze.html
 ```
 
 ---
+## Hardware Setup
+![Hardware](images/hardware_setup.jpeg)
+*ESP32 connected to the MPU6050 sensor.*
+
+### Initial State
+Player starts at the bottom-left corner of the maze.
+![Initial State](images/state1.png)
+
+### Wall Breaking
+![Wall Break](images/state2.png)
+The **Shake** gesture breaks nearby breakable walls.
+
+### Goal Reached
+The player reaches the goal and wins the game.
+![Win Screen](images/state3.png)
+
+---
 
 ##  Installation
 
