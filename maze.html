@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Gesture Puzzle Maze</title>
+<style>
+body {
+  margin:0;
+  background:#0d0d1a;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  font-family:monospace;
+  color:#00ffcc;
+}
+canvas {
+  background:#111;
+  border:2px solid #00ffcc;
+}
+#info {
+  margin-top:10px;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+
+<div>
+  <canvas id="c" width="400" height="400"></canvas>
+  <div id="info">Gesture: idle</div>
+</div>
+
+<script>
+// ─────────────────────────────
+// CONFIG
+// ─────────────────────────────
+const WS_URL = "ws://localhost:8765";
+const SIZE = 5;
+const CELL = 80;
+
+// 0 = path, 1 = wall, 2 = breakable
+const maze = [
+  [0,0,1,0,0],
+  [1,2,1,0,1],
+  [0,0,0,2,0],
+  [0,1,1,1,0],
+  [0,0,0,1,0]
+];
+
+let player = { x:0, y:4 }; // start bottom
+let goal   = { x:4, y:0 }; // goal top
+
+let lastMove = 0;
+const COOLDOWN = 400;
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+// ─────────────────────────────
+// DRAW
+// ─────────────────────────────
+function draw() {
+  ctx.clearRect(0,0,400,400);
+
+  for (let y=0; y<SIZE; y++) {
+    for (let x=0; x<SIZE; x++) {
+
+      if (maze[y][x] === 1) ctx.fillStyle = "#ff2255"; // wall
+      else if (maze[y][x] === 2) ctx.fillStyle = "#ffaa00"; // breakable
+      else ctx.fillStyle = "#1a1a3a";
+
+      ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
+      ctx.strokeStyle = "#333";
+      ctx.strokeRect(x*CELL, y*CELL, CELL, CELL);
+    }
+  }
+
+  // goal
+  ctx.fillStyle = "#00ffcc";
+  ctx.fillRect(goal.x*CELL+20, goal.y*CELL+20, 40, 40);
+
+  // player
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(player.x*CELL+40, player.y*CELL+40, 20, 0, Math.PI*2);
+  ctx.fill();
+}
+
+// ─────────────────────────────
+// MOVE LOGIC (NO DOWN)
+// ─────────────────────────────
+function move(g) {
+  const now = Date.now();
+  if (now - lastMove < COOLDOWN) return;
+
+  let nx = player.x;
+  let ny = player.y;
+
+  if (g === "tilt_left")  nx--;
+  if (g === "tilt_right") nx++;
+  if (g === "flick_up")   ny--;   // ONLY upward movement
+
+  // ❌ no downward movement allowed
+
+  if (maze[ny] && maze[ny][nx] === 0) {
+    player.x = nx;
+    player.y = ny;
+    lastMove = now;
+  }
+
+  checkWin();
+}
+
+// ─────────────────────────────
+// SHAKE → BREAK OBSTACLE
+// ─────────────────────────────
+function breakWall() {
+  const dirs = [
+    [1,0],[-1,0],[0,-1]
+  ];
+
+  for (let d of dirs) {
+    let nx = player.x + d[0];
+    let ny = player.y + d[1];
+
+    if (maze[ny] && maze[ny][nx] === 2) {
+      maze[ny][nx] = 0;
+    }
+  }
+}
+
+// ─────────────────────────────
+// WIN
+// ─────────────────────────────
+function checkWin() {
+  if (player.x === goal.x && player.y === goal.y) {
+    setTimeout(() => {
+      alert("🏁 You solved the maze!");
+      reset();
+    }, 100);
+  }
+}
+
+function reset() {
+  player = { x:0, y:4 };
+}
+
+// ─────────────────────────────
+// WEBSOCKET
+// ─────────────────────────────
+function connectWS() {
+  const ws = new WebSocket(WS_URL);
+
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    const g = data.gesture;
+
+    document.getElementById("info").innerText = "Gesture: " + g;
+
+    if (g === "shake") breakWall();
+    else if (g !== "idle") move(g);
+  };
+
+  ws.onclose = () => setTimeout(connectWS, 2000);
+  ws.onerror = () => ws.close();
+}
+connectWS();
+
+// ─────────────────────────────
+// KEYBOARD FALLBACK
+// ─────────────────────────────
+document.addEventListener("keydown", e => {
+  if (e.key === "a") move("tilt_left");
+  if (e.key === "d") move("tilt_right");
+  if (e.key === "w") move("flick_up");
+  if (e.key === "s") breakWall();
+});
+
+// ─────────────────────────────
+// LOOP
+// ─────────────────────────────
+function loop() {
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+</script>
+</body>
+</html>
